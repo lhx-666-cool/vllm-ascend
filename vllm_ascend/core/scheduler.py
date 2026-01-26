@@ -54,11 +54,22 @@ class AscendScheduler(Scheduler):
                          include_finished_set, log_stats)
         self.scheduled_req_ids: set[str] = set()
         self.running: list[Request] = []
+        self._ascend_policy_name: str = getattr(self.scheduler_config,
+                                               "ascend_policy",
+                                               self.scheduler_config.policy)
         self._scheduling_policy: Policy = PolicyFactory.get_policy(
-            self.scheduler_config.policy)
+            self._ascend_policy_name)
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:
+            if self._ascend_policy_name != "fcfs" and self.waiting:
+                now = time.monotonic()
+                sorted_waiting = self._scheduling_policy.sort_by_priority(
+                    now, list(self.waiting))
+                # Keep upstream vLLM's FCFSRequestQueue type to preserve its
+                # RequestQueue interface (e.g. add_request, pop_request).
+                self.waiting.clear()
+                self.waiting.extend(sorted_waiting)
             return super().schedule()
         scheduled_new_reqs: list[Request] = []
         scheduled_resumed_reqs: list[Request] = []
@@ -82,9 +93,11 @@ class AscendScheduler(Scheduler):
         # and put back at the head of the waiting queue later
         skipped_waiting_requests: deque[Request] = deque()
 
-        if self.scheduler_config.policy != "fcfs" and self.waiting:
-            self.waiting = deque(
-                self._scheduling_policy.sort_by_priority(now, list(self.waiting)))
+        if self._ascend_policy_name != "fcfs" and self.waiting:
+            sorted_waiting = self._scheduling_policy.sort_by_priority(
+                now, list(self.waiting))
+            self.waiting.clear()
+            self.waiting.extend(sorted_waiting)
 
         # Schedule prefill requests first.
         while self.waiting and token_budget > 0:
@@ -257,7 +270,7 @@ class AscendScheduler(Scheduler):
         # If no prefill requests are scheduled,
         # Schedule decode requests next.
         if len(self.scheduled_req_ids) == 0:
-            if self.scheduler_config.policy != "fcfs" and self.running:
+            if self._ascend_policy_name != "fcfs" and self.running:
                 self.running = self._scheduling_policy.sort_by_priority(
                     now, self.running)
             req_index = 0

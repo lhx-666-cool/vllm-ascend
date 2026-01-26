@@ -15,7 +15,7 @@
 # This file is a part of the vllm-ascend project.
 #
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Type, Union
 
 from vllm.config import SchedulerConfig
@@ -26,7 +26,12 @@ from vllm_ascend.core.policy import PolicyFactory
 @dataclass
 class AscendSchedulerConfig(SchedulerConfig):
     enable_chunked_prefill: bool = False
+    # NOTE: vLLM V1 scheduler only accepts "fcfs" and "priority".
+    # vLLM-Ascend supports extra policies (e.g. "aging") by keeping the
+    # user-requested policy in `ascend_policy` while forcing `policy` to "fcfs"
+    # to satisfy upstream vLLM's validation and request-queue construction.
     policy: str = "fcfs"
+    ascend_policy: str = field(default="fcfs", init=False)
     num_scheduler_steps: int = 1
     scheduler_cls: Union[str, Type[object]] = (
         "vllm_ascend.core.scheduler.AscendScheduler")
@@ -57,11 +62,15 @@ class AscendSchedulerConfig(SchedulerConfig):
         self.max_num_encoder_input_tokens = self.max_num_batched_tokens
         self.encoder_cache_size = self.max_num_batched_tokens
         self.chunked_prefill_enabled = self.enable_chunked_prefill
-        if self.policy not in PolicyFactory.get_available_policies():
+        requested_policy = self.policy
+        if requested_policy not in PolicyFactory.get_available_policies():
             raise NotImplementedError(
                 "currently AscendScheduler only supports policies: "
-                f"{PolicyFactory.get_available_policies()}, got {self.policy}"
+                f"{PolicyFactory.get_available_policies()}, got {requested_policy}"
             )
+        self.ascend_policy = requested_policy
+        # Force upstream vLLM policy to a supported value.
+        self.policy = "fcfs"
         if self.is_multimodal_model:
             raise NotImplementedError(
                 "currently AscendScheduler only supports LLM models.")
