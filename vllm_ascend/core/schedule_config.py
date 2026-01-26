@@ -20,6 +20,8 @@ from typing import Type, Union
 
 from vllm.config import SchedulerConfig
 
+from vllm_ascend.core.policy import PolicyFactory
+
 
 @dataclass
 class AscendSchedulerConfig(SchedulerConfig):
@@ -55,9 +57,10 @@ class AscendSchedulerConfig(SchedulerConfig):
         self.max_num_encoder_input_tokens = self.max_num_batched_tokens
         self.encoder_cache_size = self.max_num_batched_tokens
         self.chunked_prefill_enabled = self.enable_chunked_prefill
-        if self.policy != "fcfs":
+        if self.policy not in PolicyFactory.get_available_policies():
             raise NotImplementedError(
-                f"currently AscendScheduler only supports fcfs policy, got {self.policy}"
+                "currently AscendScheduler only supports policies: "
+                f"{PolicyFactory.get_available_policies()}, got {self.policy}"
             )
         if self.is_multimodal_model:
             raise NotImplementedError(

@@ -54,6 +54,7 @@ The details of each config option are as follows:
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
 | `enabled` | bool | `False` | Whether to enable ascend scheduler for V1 engine|
+| `policy` | str | `fcfs` | Scheduling policy. Supported values: `fcfs`, `aging` |
 
 ascend_scheduler_config also support the options from [vllm scheduler config](https://docs.vllm.ai/en/stable/api/vllm/config.html#vllm.config.SchedulerConfig). For example, you can add `enable_chunked_prefill: True` to ascend_scheduler_config as well.
 
@@ -73,6 +74,7 @@ An example of additional configuration is as follows:
     },
     "ascend_scheduler_config": {
         "enabled": True,
+        "policy": "aging",
         "enable_chunked_prefill": True,
     },
     "expert_tensor_parallel_size": 1,

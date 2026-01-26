@@ -32,6 +32,7 @@ from vllm.v1.outputs import ModelRunnerOutput
 from vllm.v1.request import Request, RequestStatus
 from vllm.v1.structured_output import StructuredOutputManager
 
+from vllm_ascend.core.policy import Policy, PolicyFactory
 from vllm_ascend.utils import vllm_version_is
 
 
@@ -53,6 +54,8 @@ class AscendScheduler(Scheduler):
                          include_finished_set, log_stats)
         self.scheduled_req_ids: set[str] = set()
         self.running: list[Request] = []
+        self._scheduling_policy: Policy = PolicyFactory.get_policy(
+            self.scheduler_config.policy)
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:
@@ -69,7 +72,8 @@ class AscendScheduler(Scheduler):
         scheduled_spec_decode_tokens: dict[str, list[int]] = {}
 
         # For logging.
-        scheduled_timestamp = time.monotonic()
+        now = time.monotonic()
+        scheduled_timestamp = now
 
         # Record scheduled LoRA requests.
         scheduled_loras: set[int] = set()
@@ -78,12 +82,20 @@ class AscendScheduler(Scheduler):
         # and put back at the head of the waiting queue later
         skipped_waiting_requests: deque[Request] = deque()
 
+        if self.scheduler_config.policy != "fcfs" and self.waiting:
+            self.waiting = deque(
+                self._scheduling_policy.sort_by_priority(now, list(self.waiting)))
+
         # Schedule prefill requests first.
         while self.waiting and token_budget > 0:
             if len(self.running) == self.max_num_running_reqs:
                 break
 
             request = self.waiting[0]
+            # This is required to handle benchmarking where we set request
+            # arrival time ahead of time.
+            if request.arrival_time > now:
+                break
 
             def skip_cur_request():
                 self.waiting.popleft()
@@ -245,6 +257,9 @@ class AscendScheduler(Scheduler):
         # If no prefill requests are scheduled,
         # Schedule decode requests next.
         if len(self.scheduled_req_ids) == 0:
+            if self.scheduler_config.policy != "fcfs" and self.running:
+                self.running = self._scheduling_policy.sort_by_priority(
+                    now, self.running)
             req_index = 0
             while req_index < len(self.running) and token_budget > 0:
                 request = self.running[req_index]
