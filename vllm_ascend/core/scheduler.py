@@ -54,15 +54,12 @@ class AscendScheduler(Scheduler):
                          include_finished_set, log_stats)
         self.scheduled_req_ids: set[str] = set()
         self.running: list[Request] = []
-        self._ascend_policy_name: str = getattr(self.scheduler_config,
-                                               "ascend_policy",
-                                               self.scheduler_config.policy)
         self._scheduling_policy: Policy = PolicyFactory.get_policy(
-            self._ascend_policy_name)
+            self.scheduler_config.policy)
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:
-            if self._ascend_policy_name != "fcfs" and self.waiting:
+            if self.scheduler_config.policy != "fcfs" and self.waiting:
                 now = time.monotonic()
                 sorted_waiting = self._scheduling_policy.sort_by_priority(
                     now, list(self.waiting))
@@ -93,7 +90,7 @@ class AscendScheduler(Scheduler):
         # and put back at the head of the waiting queue later
         skipped_waiting_requests: deque[Request] = deque()
 
-        if self._ascend_policy_name != "fcfs" and self.waiting:
+        if self.scheduler_config.policy != "fcfs" and self.waiting:
             sorted_waiting = self._scheduling_policy.sort_by_priority(
                 now, list(self.waiting))
             self.waiting.clear()
@@ -270,7 +267,7 @@ class AscendScheduler(Scheduler):
         # If no prefill requests are scheduled,
         # Schedule decode requests next.
         if len(self.scheduled_req_ids) == 0:
-            if self._ascend_policy_name != "fcfs" and self.running:
+            if self.scheduler_config.policy != "fcfs" and self.running:
                 self.running = self._scheduling_policy.sort_by_priority(
                     now, self.running)
             req_index = 0
