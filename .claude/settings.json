@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/liu/sarathi-serve/sarathi-serve/sarathi/core/scheduler/**)",
+      "Read(//home/liu/sarathi-serve/**)",
+      "Bash(python -c \"import vllm; print\\(vllm.__file__\\)\")",
+      "Read(//home/liu/**)",
+      "Read(//usr/**)",
+      "Read(//opt/**)",
+      "Bash(find /home/liu -name request.py -path */v1/*)",
+      "Bash(find /home/liu -path */vllm/v1/request.py)",
+      "Bash(find /home/liu -name *.egg-link)",
+      "Bash(find /home/liu/miniconda3 -path */vllm/v1/request.py)",
+      "Bash(find /home/liu/miniconda3 -path */site-packages/vllm -type d)",
+      "Bash(find /root -path */vllm/v1/request.py)",
+      "Bash(find /root -path */site-packages/vllm -type d)",
+      "Bash(find /home/liu/sarathi-serve/vllm-ascend -name *.pth -o -name *.egg-link)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(find /home/liu -path *vllm*v1*request* -type f)",
+      "Bash(python3 -c \"import vllm; print\\(vllm.__file__\\)\")",
+      "Bash(find /home/liu/sarathi-serve/vllm-ascend -name \"*.py\" -type f -exec grep -l \"arrival_time\\\\|num_tokens\\\\|num_prompt_tokens\" {})",
+      "Bash(python3:*)"
+    ]
+  }
+}

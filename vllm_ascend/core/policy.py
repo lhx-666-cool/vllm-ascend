@@ -7,6 +7,7 @@ from typing import List, Protocol, Sequence, Type, TypeVar
 class SchedulableRequest(Protocol):
     arrival_time: float
     num_tokens: int
+    num_prompt_tokens: int
     num_computed_tokens: int
 
 
@@ -55,10 +56,16 @@ class AGING(Policy):
         time_weight = 588.0 * 0.3
         token_weight = -1.0
 
-        num_remaining_tokens = max(request.num_tokens - request.num_computed_tokens, 0)
+        # Use num_prompt_tokens as the task-length signal so that the
+        # short-job penalty stays meaningful during the decode phase.
+        # (num_tokens - num_computed_tokens is always 1 during decode,
+        # which makes the weight term useless and degrades aging to FCFS.)
+        num_prompt_remaining = max(
+            request.num_prompt_tokens - request.num_computed_tokens, 0
+        )
 
         return time_weight * (now - request.arrival_time) + token_weight * (
-            num_remaining_tokens
+            num_prompt_remaining
         )
 
 

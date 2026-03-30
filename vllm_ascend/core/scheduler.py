@@ -59,14 +59,18 @@ class AscendScheduler(Scheduler):
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:
-            if self.scheduler_config.policy != "fcfs" and self.waiting:
+            if self.scheduler_config.policy != "fcfs":
                 now = time.monotonic()
-                sorted_waiting = self._scheduling_policy.sort_by_priority(
-                    now, list(self.waiting))
-                # Keep upstream vLLM's FCFSRequestQueue type to preserve its
-                # RequestQueue interface (e.g. add_request, pop_request).
-                self.waiting.clear()
-                self.waiting.extend(sorted_waiting)
+                if self.waiting:
+                    sorted_waiting = self._scheduling_policy.sort_by_priority(
+                        now, list(self.waiting))
+                    # Keep upstream vLLM's FCFSRequestQueue type to preserve its
+                    # RequestQueue interface (e.g. add_request, pop_request).
+                    self.waiting.clear()
+                    self.waiting.extend(sorted_waiting)
+                if self.running:
+                    self.running = self._scheduling_policy.sort_by_priority(
+                        now, self.running)
             return super().schedule()
         scheduled_new_reqs: list[Request] = []
         scheduled_resumed_reqs: list[Request] = []
