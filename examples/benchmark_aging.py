@@ -111,23 +111,33 @@ def run_benchmark(
     results: dict[str, RequestResult] = {}
     finished = 0
     total = len(requests)
+    last_progress = time.monotonic()
 
     while finished < total:
         step_outputs = engine.step()
+        now_t = time.monotonic()
         for output in step_outputs:
             req_id = output.request_id
             if output.finished and req_id not in results:
                 idx = int(req_id)
+                out_tokens = output.outputs[0].token_ids if output.outputs else []
                 results[req_id] = RequestResult(
                     idx=idx,
                     prompt_len=len(requests[idx].prompt_token_ids),
-                    output_len=len(output.outputs[0].token_ids),
+                    output_len=len(out_tokens),
                     arrival_time=abs_arrival_times[idx],
-                    finish_time=time.monotonic(),
+                    finish_time=now_t,
                 )
                 finished += 1
+                last_progress = now_t
                 if finished % 100 == 0 or finished == total:
                     print(f"  完成 {finished}/{total} 个请求")
+        # 如果超过 30s 没有新请求完成，说明剩余请求的 arrival_time 还未到，
+        # 空转等待中——打印提示避免误以为卡死
+        if now_t - last_progress > 30:
+            remaining = total - finished
+            print(f"  等待 {remaining} 个请求的 arrival_time 到达（已等待 {now_t - last_progress:.0f}s）")
+            last_progress = now_t
 
     del engine
     return list(results.values())
@@ -182,8 +192,9 @@ def parse_args():
     parser.add_argument("--interval", type=float, default=0.1,
                         help="请求到达间隔（秒）")
     parser.add_argument("--min-prompt-tokens", type=int, default=128)
-    parser.add_argument("--max-prompt-tokens", type=int, default=1024,
-                        help="prompt 长度范围越大，aging vs fcfs 差异越明显")
+    parser.add_argument("--max-prompt-tokens", type=int, default=512,
+                        help="不开 chunked_prefill 时上限为 max_num_batched_tokens(默认2048)，"
+                             "prompt 长度范围越大，aging vs fcfs 差异越明显")
     parser.add_argument("--min-output-tokens", type=int, default=16)
     parser.add_argument("--max-output-tokens", type=int, default=128)
     parser.add_argument("--seed", type=int, default=42)

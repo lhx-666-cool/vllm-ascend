@@ -20,7 +20,8 @@
       "Bash(find /home/liu -path *vllm*v1*request* -type f)",
       "Bash(python3 -c \"import vllm; print\\(vllm.__file__\\)\")",
       "Bash(find /home/liu/sarathi-serve/vllm-ascend -name \"*.py\" -type f -exec grep -l \"arrival_time\\\\|num_tokens\\\\|num_prompt_tokens\" {})",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(ls /home/liu/sarathi-serve/vllm-ascend/*.py /home/liu/sarathi-serve/vllm-ascend/*.sh)"
     ]
   }
 }
