@@ -49,13 +49,20 @@ class AscendScheduler(Scheduler):
         include_finished_set: bool = False,
         log_stats: bool = False,
     ) -> None:
+        # Upstream Scheduler.__init__ validates scheduler_config.policy and
+        # only accepts "fcfs"/"priority". Temporarily set it to "fcfs" so the
+        # super().__init__() call passes, then restore the real policy.
+        scheduler_config = vllm_config.scheduler_config
+        ascend_policy = scheduler_config.policy
+        scheduler_config.policy = "fcfs"
         super().__init__(vllm_config, kv_cache_config,
                          structured_output_manager, mm_registry,
                          include_finished_set, log_stats)
+        scheduler_config.policy = ascend_policy
         self.scheduled_req_ids: set[str] = set()
         self.running: list[Request] = []
         self._scheduling_policy: Policy = PolicyFactory.get_policy(
-            self.scheduler_config.policy)
+            ascend_policy)
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:

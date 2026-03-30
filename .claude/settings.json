@@ -21,7 +21,8 @@
       "Bash(python3 -c \"import vllm; print\\(vllm.__file__\\)\")",
       "Bash(find /home/liu/sarathi-serve/vllm-ascend -name \"*.py\" -type f -exec grep -l \"arrival_time\\\\|num_tokens\\\\|num_prompt_tokens\" {})",
       "Bash(python3:*)",
-      "Bash(ls /home/liu/sarathi-serve/vllm-ascend/*.py /home/liu/sarathi-serve/vllm-ascend/*.sh)"
+      "Bash(ls /home/liu/sarathi-serve/vllm-ascend/*.py /home/liu/sarathi-serve/vllm-ascend/*.sh)",
+      "Bash(find /root/miniconda3/envs/vlm -name scheduler.py -path */v1/core/*)"
     ]
   }
 }
