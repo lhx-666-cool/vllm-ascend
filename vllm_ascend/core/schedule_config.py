@@ -27,6 +27,11 @@ from vllm_ascend.core.policy import PolicyFactory
 class AscendSchedulerConfig(SchedulerConfig):
     enable_chunked_prefill: bool = False
     policy: str = "fcfs"
+    # Weights for the AGING policy. time_weight controls how fast waiting
+    # time raises priority; token_weight penalizes requests with more
+    # remaining prompt tokens (negative = shorter jobs preferred).
+    aging_time_weight: float = 588.0 * 0.3
+    aging_token_weight: float = -1.0
     num_scheduler_steps: int = 1
     scheduler_cls: Union[str, Type[object]] = (
         "vllm_ascend.core.scheduler.AscendScheduler")

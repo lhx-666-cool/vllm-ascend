@@ -48,14 +48,16 @@ class FCFS(Policy):
 
 class AGING(Policy):
 
+    def __init__(self, time_weight: float = 588.0 * 0.3,
+                 token_weight: float = -1.0):
+        self.time_weight = time_weight
+        self.token_weight = token_weight
+
     def get_priority(
         self,
         now: float,
         request: SchedulableRequest,
     ) -> float:
-        time_weight = 588.0 * 0.3
-        token_weight = -1.0
-
         # Use num_prompt_tokens as the task-length signal so that the
         # short-job penalty stays meaningful during the decode phase.
         # (num_tokens - num_computed_tokens is always 1 during decode,
@@ -64,9 +66,8 @@ class AGING(Policy):
             request.num_prompt_tokens - request.num_computed_tokens, 0
         )
 
-        return time_weight * (now - request.arrival_time) + token_weight * (
-            num_prompt_remaining
-        )
+        return (self.time_weight * (now - request.arrival_time) +
+                self.token_weight * num_prompt_remaining)
 
 
 class PolicyFactory:
@@ -78,7 +79,9 @@ class PolicyFactory:
 
     @classmethod
     def get_policy(cls, policy_name: str, **kwargs) -> Policy:
-        policy_cls = cls._POLICY_REGISTRY.get(policy_name)
+        # Strip "aging:" prefix to support named variants like "aging:tw50:tok2"
+        base_name = policy_name.split(":")[0]
+        policy_cls = cls._POLICY_REGISTRY.get(base_name)
         if policy_cls is None:
             raise ValueError(
                 f"Unsupported policy {policy_name!r}. "

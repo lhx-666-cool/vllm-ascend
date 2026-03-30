@@ -205,6 +205,10 @@ def parse_args():
     parser.add_argument("--policies", nargs="+", default=AVAILABLE_POLICIES,
                         choices=AVAILABLE_POLICIES,
                         help=f"要测试的策略列表，可选: {AVAILABLE_POLICIES}，默认全部测试")
+    parser.add_argument("--aging-time-weight", type=float, default=588.0 * 0.3,
+                        help="aging 策略的时间权重（越大越像 FCFS）")
+    parser.add_argument("--aging-token-weight", type=float, default=-1.0,
+                        help="aging 策略的 token 权重（越负越倾向于短 prompt）")
     parser.add_argument("--output-dir", type=str, default="./benchmark_results")
     return parser.parse_args()
 
@@ -238,6 +242,8 @@ def main():
                 "ascend_scheduler_config": {
                     "enabled": True,
                     "policy": policy,
+                    "aging_time_weight": args.aging_time_weight,
+                    "aging_token_weight": args.aging_token_weight,
                 }
             },
         )

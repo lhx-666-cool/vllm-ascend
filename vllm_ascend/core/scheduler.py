@@ -61,8 +61,14 @@ class AscendScheduler(Scheduler):
         scheduler_config.policy = ascend_policy
         self.scheduled_req_ids: set[str] = set()
         self.running: list[Request] = []
+        policy_kwargs = {}
+        if ascend_policy == "aging":
+            policy_kwargs["time_weight"] = getattr(
+                scheduler_config, "aging_time_weight", 588.0 * 0.3)
+            policy_kwargs["token_weight"] = getattr(
+                scheduler_config, "aging_token_weight", -1.0)
         self._scheduling_policy: Policy = PolicyFactory.get_policy(
-            ascend_policy)
+            ascend_policy, **policy_kwargs)
         logger.info("AscendScheduler initialized with policy: %s (instance: %s)",
                     ascend_policy, type(self._scheduling_policy).__name__)
 
