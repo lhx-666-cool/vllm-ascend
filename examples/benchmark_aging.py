@@ -83,6 +83,10 @@ def run_benchmark(
     print(f"策略: {policy}  |  请求数: {len(requests)}")
     print(f"{'='*60}")
 
+    # Clear the global AscendConfig singleton so each policy gets a fresh config.
+    from vllm_ascend.ascend_config import clear_ascend_config
+    clear_ascend_config()
+
     engine = LLMEngine.from_engine_args(engine_args)
 
     sampling_params = SamplingParams(temperature=0.0, ignore_eos=True)
