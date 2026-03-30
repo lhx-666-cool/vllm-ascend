@@ -63,6 +63,8 @@ class AscendScheduler(Scheduler):
         self.running: list[Request] = []
         self._scheduling_policy: Policy = PolicyFactory.get_policy(
             ascend_policy)
+        logger.info("AscendScheduler initialized with policy: %s (instance: %s)",
+                    ascend_policy, type(self._scheduling_policy).__name__)
 
     def schedule(self) -> SchedulerOutput:
         if self.scheduler_config.chunked_prefill_enabled:
