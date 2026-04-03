@@ -28,6 +28,7 @@ import torch
 from torch import nn
 from transformers import PretrainedConfig
 from vllm.config import VllmConfig
+from vllm.distributed import get_pp_group
 from vllm.model_executor.layers.linear import (
     QKVParallelLinear,
     RowParallelLinear,
