@@ -22,7 +22,13 @@
       "Bash(find /home/liu/sarathi-serve/vllm-ascend -name \"*.py\" -type f -exec grep -l \"arrival_time\\\\|num_tokens\\\\|num_prompt_tokens\" {})",
       "Bash(python3:*)",
       "Bash(ls /home/liu/sarathi-serve/vllm-ascend/*.py /home/liu/sarathi-serve/vllm-ascend/*.sh)",
-      "Bash(find /root/miniconda3/envs/vlm -name scheduler.py -path */v1/core/*)"
+      "Bash(find /root/miniconda3/envs/vlm -name scheduler.py -path */v1/core/*)",
+      "WebFetch(domain:ai.gitcode.com)",
+      "Bash(curl -s \"https://ai.gitcode.com/ascend-tribe/openPangu-Embedded-7B-V1.1/raw/main/config.json\")",
+      "Bash(curl -s \"https://ai.gitcode.com/api/v1/repos/ascend-tribe/openPangu-Embedded-7B-V1.1/contents\")",
+      "Bash(curl -s -H \"User-Agent: Mozilla/5.0\" \"https://ai.gitcode.com/ascend-tribe/openPangu-Embedded-7B-V1.1/raw/main/config.json\")",
+      "Read(//home/**)",
+      "Bash(pip index:*)"
     ]
   }
 }
